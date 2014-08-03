@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MultiTrackCLM_vs2012", "exe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CLM", "lib\local\CLM\CLM_vs2012.vcxproj", "{BDC1D107-DE17-4705-8E7B-CDDE8BFB2BF8}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GenerateTrainingData", "asc\GenerateTrainingData\GenerateTrainingData.vcxproj", "{FF858DF9-C0A5-48C7-BCC6-554E9488CC98}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ASC", "ASC", "{399B3EDA-8DF2-47B4-BEFD-2B17D1F4D1EF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -39,8 +43,15 @@ Global
 		{BDC1D107-DE17-4705-8E7B-CDDE8BFB2BF8}.Debug|Win32.Build.0 = Debug|Win32
 		{BDC1D107-DE17-4705-8E7B-CDDE8BFB2BF8}.Release|Win32.ActiveCfg = Release|Win32
 		{BDC1D107-DE17-4705-8E7B-CDDE8BFB2BF8}.Release|Win32.Build.0 = Release|Win32
+		{FF858DF9-C0A5-48C7-BCC6-554E9488CC98}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FF858DF9-C0A5-48C7-BCC6-554E9488CC98}.Debug|Win32.Build.0 = Debug|Win32
+		{FF858DF9-C0A5-48C7-BCC6-554E9488CC98}.Release|Win32.ActiveCfg = Release|Win32
+		{FF858DF9-C0A5-48C7-BCC6-554E9488CC98}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FF858DF9-C0A5-48C7-BCC6-554E9488CC98} = {399B3EDA-8DF2-47B4-BEFD-2B17D1F4D1EF}
 	EndGlobalSection
 EndGlobal

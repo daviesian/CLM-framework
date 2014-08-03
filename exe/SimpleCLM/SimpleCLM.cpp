@@ -95,7 +95,7 @@ int main (int argc, char **argv)
 	vector<string> files, depth_directories, pose_output_files, tracked_videos_output, landmark_output_files;
 	
 	// By default try webcam 0
-	int device = 0;
+	int device = 1;
 
 	// cx and cy aren't necessarilly in the image center, so need to be able to override it (start with unit vals and init them if none specified)
     float fx = 500, fy = 500, cx = 0, cy = 0;
