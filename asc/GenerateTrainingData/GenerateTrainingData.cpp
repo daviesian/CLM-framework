@@ -9,26 +9,65 @@
 
 #include <fstream>
 #include <sstream>
-#include <queue>
+#include <deque>
 
 using namespace std;
 
-int main (int argc, char **argv)
+double readLineDouble(FILE* fp)
 {
+	char nextLine[1024];
+	char* endPtr;
+	fgets(nextLine, 1024,fp);
+	double d = strtod(nextLine, &endPtr);
+	return d;
+}
 
-	// By default try webcam 1
-	int device = 1;
+void fprintf4(FILE* fp1, FILE* fp2, FILE* fp3, FILE* fp4, const char* _format, ...)
+{
+	va_list argptr;
+	va_start(argptr, _format);
+	vfprintf(fp1, _format, argptr);
+	vfprintf(fp2, _format, argptr);
+	vfprintf(fp3, _format, argptr);
+	vfprintf(fp4, _format, argptr);
+	va_end(argptr);
+}
+
+
+void extractFeatures(const char* videoFile,
+					// LABEL FILES
+					const char* labelFileA,
+					const char* labelFileE,
+					const char* labelFileP,
+					const char* labelFileV,
+					// OUTPUT FILES
+					const char* outputFileA,
+					const char* outputFileE,
+					const char* outputFileP,
+					const char* outputFileV) {
+
+	FILE* labelFpA = fopen(labelFileA, "r");
+	FILE* labelFpE = fopen(labelFileE, "r");
+	FILE* labelFpP = fopen(labelFileP, "r");
+	FILE* labelFpV = fopen(labelFileV, "r");
+
+	FILE* fpA = fopen(outputFileA,"a");
+	FILE* fpE = fopen(outputFileE,"a");
+	FILE* fpP = fopen(outputFileP,"a");
+	FILE* fpV = fopen(outputFileV,"a");
 
     float fx = 500, fy = 500, cx = 0, cy = 0;
+
+	double poseSmoothingTime = 2;
+	double shapeSmoothingTime = 5;
 			
 	CLMTracker::CLMParameters clmParameters;
 	
 	CLMTracker::CLM clmModel(clmParameters.model_location);	
 
-	VideoCapture videoCapture(device);
+	VideoCapture videoCapture(videoFile);
 
 	Mat capturedImage;
-	videoCapture >> capturedImage;
 	videoCapture >> capturedImage;
 
 	// If optical centers are not defined just use center of image
@@ -38,9 +77,25 @@ int main (int argc, char **argv)
 		cy = capturedImage.rows / 2.0f;
 	}
 
-	queue<double> frameTimes;
+	deque<double> frameTimesFps;
+	deque<double> frameTimesPose;
+	deque<double> frameTimesShape;
+	deque<Vec6d> poseQueue;
+	deque<Mat_<double>> shapeQueue;
+
+	bool shapeAvailable = false;
+	bool poseAvailable = false;
+	Vec6d smoothedPose;
+	Mat_<double> smoothedShape;
 
 	while(!capturedImage.empty()) {
+
+		videoCapture >> capturedImage;
+		double currentFrameLabelA = readLineDouble(labelFpA);
+		double currentFrameLabelE = readLineDouble(labelFpE);
+		double currentFrameLabelP = readLineDouble(labelFpP);
+		double currentFrameLabelV = readLineDouble(labelFpV);
+		double now = cv::getTickCount() / (double)cv::getTickFrequency();
 
 		Mat_<uchar> grayscaleImage;
 		Mat_<float> depthImage;
@@ -54,17 +109,99 @@ int main (int argc, char **argv)
 
 			CLMTracker::Draw(capturedImage, clmModel);
 			CLMTracker::DrawBox(capturedImage, pose_estimate_CLM, Scalar(255, 0, 0), 2, fx, fy, cx, cy);
+
+			// Add shape and pose params to queues.
+			poseQueue.push_back(pose_estimate_CLM);
+			shapeQueue.push_back(clmModel.params_local.clone());
+
+			frameTimesPose.push_back(now);
+			frameTimesShape.push_back(now);
+
+			if(frameTimesPose.front() < now - poseSmoothingTime) {
+				poseQueue.pop_front();
+				frameTimesPose.pop_front();
+				poseAvailable = true;
+			}
+
+			if(frameTimesShape.front() < now - shapeSmoothingTime) {
+				shapeQueue.pop_front();
+				frameTimesShape.pop_front();
+				shapeAvailable = true;
+			}
+
+		} else {
+			// Tracking failed. Clear the smoothing queues.
+
+			frameTimesPose.clear();
+			frameTimesShape.clear();
+			poseQueue.clear();
+			shapeQueue.clear();
+
+			poseAvailable = false;
+			shapeAvailable = false;
+		}
+
+		// Do smoothing
+
+		if (poseAvailable && shapeAvailable) {
+
+			// Take average of shape params over smoothing window.
+			smoothedShape = Mat::zeros(shapeQueue[0].rows, shapeQueue[0].cols, shapeQueue[0].type());
+			
+			for (int i = 0; i < shapeQueue.size(); i++)
+			{
+				smoothedShape += shapeQueue[i];
+			}
+
+			smoothedShape /= shapeQueue.size();
+
+			// Calculate SD of pose params over smoothing window.
+			Vec6d means;
+			for (int i = 0; i < poseQueue.size(); i++)
+			{
+				means += poseQueue[i];
+			}
+			means /= (double)poseQueue.size();
+
+			Vec6d diffs;
+			for (int i = 0; i < poseQueue.size(); i++)
+			{
+				Vec6d diff = (poseQueue[i] - means);
+				diffs += diff.mul(diff);
+			}
+
+			diffs /= (double)poseQueue.size();
+
+			cv::sqrt(diffs,smoothedPose);
+
+			// Write features to files.
+			fprintf(fpA, "%f", currentFrameLabelA);
+			fprintf(fpE, "%f", currentFrameLabelE);
+			fprintf(fpP, "%f", currentFrameLabelP);
+			fprintf(fpV, "%f", currentFrameLabelV);
+			int j = 1;
+			for (int i = 0; i < smoothedShape.rows; i++)
+			{
+				double val = smoothedShape.at<double>(i);
+				fprintf4(fpA, fpE, fpP, fpV, " %d: %f", j++, val);
+			}
+			for (int i = 0; i < smoothedPose.rows; i++)
+			{
+				double val = smoothedPose[i];
+				fprintf4(fpA, fpE, fpP, fpV, " %d: %f", j++, val);
+			}
+
+			fprintf4(fpA, fpE, fpP, fpV, "\n");
+
 		}
 
 		// FPS calculation
 
-		double now = cv::getTickCount() / (double)cv::getTickFrequency();
+		frameTimesFps.push_back(now);
+		while(frameTimesFps.front() < now - 3)
+			frameTimesFps.pop_front(); // Only keep history of the last 3 seconds.
 
-		frameTimes.push(now);
-		while(frameTimes.front() < now - 3)
-			frameTimes.pop(); // Only keep history of the last 3 seconds.
-
-		double fps = frameTimes.size() / (now - frameTimes.front());
+		double fps = frameTimesFps.size() / (now - frameTimesFps.front());
 
 		char fpsC[255];
 		sprintf(fpsC, "%d", (int)fps);
@@ -81,12 +218,78 @@ int main (int argc, char **argv)
 		// quit the application
 		if(characterPress == 'q')
 		{
-			return 0;
+			return;
 		}
-
-		videoCapture >> capturedImage;
 	}
 
+}
+
+int main (int argc, char **argv)
+{
+	for (int i = 1; i < 33; i++)
+	{
+		char title[1024];
+		sprintf(title, "Title Video %d of 63", i);
+		system(title);
+
+		char vid[1024];
+		char labelA[1024];
+		char labelE[1024];
+		char labelP[1024];
+		char labelV[1024];
+
+		sprintf(vid, "E:\\localdata\\avec2012\\data\\devel_video%03d.avi", i);
+		sprintf(labelA, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_arousal.dat", i);
+		sprintf(labelE, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_expectancy.dat", i);
+		sprintf(labelP, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_power.dat", i);
+		sprintf(labelV, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_valence.dat", i);
+
+		extractFeatures(vid,
+						// LABEL FILES
+						labelA,
+						labelE,
+						labelP,
+						labelV,
+						// OUTPUT FILES
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
+	}
+
+	for (int i = 1; i < 32; i++)
+	{
+		char title[1024];
+		sprintf(title, "Title Video %d of 63", i + 32);
+		system(title);
+
+		char vid[1024];
+		char labelA[1024];
+		char labelE[1024];
+		char labelP[1024];
+		char labelV[1024];
+
+		sprintf(vid, "E:\\localdata\\avec2012\\data\\train_video%03d.avi", i);
+		sprintf(labelA, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_arousal.dat", i);
+		sprintf(labelE, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_expectancy.dat", i);
+		sprintf(labelP, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_power.dat", i);
+		sprintf(labelV, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_valence.dat", i);
+
+		extractFeatures(vid,
+						// LABEL FILES
+						labelA,
+						labelE,
+						labelP,
+						labelV,
+						// OUTPUT FILES
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
+						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
+	}
+
+	cout << "Done. Now run scale_features.bat then train.bat" << endl;
+	system("pause");
 	return 0;
 }
 
