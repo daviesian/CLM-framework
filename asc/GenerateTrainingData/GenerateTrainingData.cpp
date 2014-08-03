@@ -9,16 +9,16 @@
 
 #include <fstream>
 #include <sstream>
+#include <queue>
 
 using namespace std;
 
 int main (int argc, char **argv)
 {
 
-	// By default try webcam 0
+	// By default try webcam 1
 	int device = 1;
 
-	// cx and cy aren't necessarilly in the image center, so need to be able to override it (start with unit vals and init them if none specified)
     float fx = 500, fy = 500, cx = 0, cy = 0;
 			
 	CLMTracker::CLMParameters clmParameters;
@@ -38,6 +38,8 @@ int main (int argc, char **argv)
 		cy = capturedImage.rows / 2.0f;
 	}
 
+	queue<double> frameTimes;
+
 	while(!capturedImage.empty()) {
 
 		Mat_<uchar> grayscaleImage;
@@ -45,15 +47,32 @@ int main (int argc, char **argv)
 
 		cvtColor(capturedImage, grayscaleImage, CV_BGR2GRAY);				
 
-		bool detection_success = CLMTracker::DetectLandmarksInVideo(grayscaleImage, depthImage, clmModel, clmParameters);
+		bool detectionSuccess = CLMTracker::DetectLandmarksInVideo(grayscaleImage, depthImage, clmModel, clmParameters);
 
-		// Work out the pose of the head from the tracked model
-		Vec6d pose_estimate_CLM;
-		pose_estimate_CLM = CLMTracker::GetCorrectedPoseCameraPlane(clmModel, fx, fy, cx, cy, clmParameters);
+		if (detectionSuccess) {
+			Vec6d pose_estimate_CLM = CLMTracker::GetCorrectedPoseCameraPlane(clmModel, fx, fy, cx, cy, clmParameters);
 
-		CLMTracker::Draw(capturedImage, clmModel);
-		CLMTracker::DrawBox(capturedImage, pose_estimate_CLM, Scalar(0,0, 255), 2, fx, fy, cx, cy);
+			CLMTracker::Draw(capturedImage, clmModel);
+			CLMTracker::DrawBox(capturedImage, pose_estimate_CLM, Scalar(255, 0, 0), 2, fx, fy, cx, cy);
+		}
 
+		// FPS calculation
+
+		double now = cv::getTickCount() / (double)cv::getTickFrequency();
+
+		frameTimes.push(now);
+		while(frameTimes.front() < now - 3)
+			frameTimes.pop(); // Only keep history of the last 3 seconds.
+
+		double fps = frameTimes.size() / (now - frameTimes.front());
+
+		char fpsC[255];
+		sprintf(fpsC, "%d", (int)fps);
+		string fpsSt("FPS:");
+		fpsSt += fpsC;
+		cv::putText(capturedImage, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
+
+		// Display tracked image.
 		imshow("Tracking", capturedImage);
 
 		// detect key presses
