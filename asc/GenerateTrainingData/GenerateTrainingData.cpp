@@ -67,6 +67,9 @@ void extractFeatures(const char* videoFile,
 
 	VideoCapture videoCapture(videoFile);
 
+	double videoFps = videoCapture.get(CV_CAP_PROP_FPS);
+	long totalFrames = videoCapture.get(CV_CAP_PROP_FRAME_COUNT);
+
 	Mat capturedImage;
 	videoCapture >> capturedImage;
 
@@ -88,14 +91,23 @@ void extractFeatures(const char* videoFile,
 	Vec6d smoothedPose;
 	Mat_<double> smoothedShape;
 
-	while(!capturedImage.empty()) {
+	int frameCount = 0;
+
+	while(true) {
 
 		videoCapture >> capturedImage;
+
+		if (capturedImage.empty())
+			break;
+
 		double currentFrameLabelA = readLineDouble(labelFpA);
 		double currentFrameLabelE = readLineDouble(labelFpE);
 		double currentFrameLabelP = readLineDouble(labelFpP);
 		double currentFrameLabelV = readLineDouble(labelFpV);
-		double now = cv::getTickCount() / (double)cv::getTickFrequency();
+		frameCount++;
+
+		// Fix frame rate as we're using video.
+		double now = frameCount / videoFps; //cv::getTickCount() / (double)cv::getTickFrequency();
 
 		Mat_<uchar> grayscaleImage;
 		Mat_<float> depthImage;
@@ -204,9 +216,9 @@ void extractFeatures(const char* videoFile,
 		double fps = frameTimesFps.size() / (now - frameTimesFps.front());
 
 		char fpsC[255];
-		sprintf(fpsC, "%d", (int)fps);
-		string fpsSt("FPS:");
-		fpsSt += fpsC;
+		sprintf(fpsC, "Frame %d of %d (%d %%, %d FPS)", frameCount, totalFrames, ((int)(100*(frameCount / (double)totalFrames))), (int)fps);
+		string fpsSt(fpsC);
+
 		cv::putText(capturedImage, fpsSt, cv::Point(10,20), CV_FONT_HERSHEY_SIMPLEX, 0.5, CV_RGB(255,0,0));		
 
 		// Display tracked image.
@@ -218,7 +230,7 @@ void extractFeatures(const char* videoFile,
 		// quit the application
 		if(characterPress == 'q')
 		{
-			return;
+			break;
 		}
 	}
 
@@ -238,11 +250,11 @@ int main (int argc, char **argv)
 		char labelP[1024];
 		char labelV[1024];
 
-		sprintf(vid, "E:\\localdata\\avec2012\\data\\devel_video%03d.avi", i);
-		sprintf(labelA, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_arousal.dat", i);
-		sprintf(labelE, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_expectancy.dat", i);
-		sprintf(labelP, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_power.dat", i);
-		sprintf(labelV, "E:\\localdata\\avec2012\\data\\labels_continuous_devel%03d_valence.dat", i);
+		sprintf(vid, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\devel_video%03d.avi", i);
+		sprintf(labelA, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_devel%03d_arousal.dat", i);
+		sprintf(labelE, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_devel%03d_expectancy.dat", i);
+		sprintf(labelP, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_devel%03d_power.dat", i);
+		sprintf(labelV, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_devel%03d_valence.dat", i);
 
 		extractFeatures(vid,
 						// LABEL FILES
@@ -251,10 +263,10 @@ int main (int argc, char **argv)
 						labelP,
 						labelV,
 						// OUTPUT FILES
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
 	}
 
 	for (int i = 1; i < 32; i++)
@@ -269,11 +281,11 @@ int main (int argc, char **argv)
 		char labelP[1024];
 		char labelV[1024];
 
-		sprintf(vid, "E:\\localdata\\avec2012\\data\\train_video%03d.avi", i);
-		sprintf(labelA, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_arousal.dat", i);
-		sprintf(labelE, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_expectancy.dat", i);
-		sprintf(labelP, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_power.dat", i);
-		sprintf(labelV, "E:\\localdata\\avec2012\\data\\labels_continuous_train%03d_valence.dat", i);
+		sprintf(vid, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\train_video%03d.avi", i);
+		sprintf(labelA, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_train%03d_arousal.dat", i);
+		sprintf(labelE, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_train%03d_expectancy.dat", i);
+		sprintf(labelP, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_train%03d_power.dat", i);
+		sprintf(labelV, "E:\\localdata\\ASC-Inclusion\\avec2012\\data\\labels_continuous_train%03d_valence.dat", i);
 
 		extractFeatures(vid,
 						// LABEL FILES
@@ -282,10 +294,10 @@ int main (int argc, char **argv)
 						labelP,
 						labelV,
 						// OUTPUT FILES
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
-						"E:\\localdata\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.arousal.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.expectancy.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.power.libsvm_raw",
+						"E:\\localdata\\ASC-Inclusion\\avec2012\\featuresFast\\ipd21_features.valence.libsvm_raw");
 	}
 
 	cout << "Done. Now run scale_features.bat then train.bat" << endl;

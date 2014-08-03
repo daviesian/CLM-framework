@@ -228,3 +228,7 @@ Release/SimpleCLM_vs2012.exe
 Debug/Puppets_vs2012.lib
 Debug/SimplePuppets_vs2012.exe
 Debug/SimplePuppets_vs2012.ilk
+asc/GenerateTrainingData/Debug/
+asc/GenerateTrainingData/Release/
+Debug/
+Release/
