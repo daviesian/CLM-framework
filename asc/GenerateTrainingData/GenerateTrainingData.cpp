@@ -58,8 +58,8 @@ void extractFeatures(const char* videoFile,
 
     float fx = 500, fy = 500, cx = 0, cy = 0;
 
-	double poseSmoothingTime = 2;
-	double shapeSmoothingTime = 5;
+	double poseSmoothingTime = 3;
+	double shapeSmoothingTime = 0.2;
 			
 	CLMTracker::CLMParameters clmParameters;
 	
