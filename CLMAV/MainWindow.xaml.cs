@@ -53,7 +53,9 @@ namespace CLMAV
             {
 
                 mmr = new MMR(0);
-                mmr.Init(1);
+
+                // This should be specified by the call? TODO using -camera param
+                mmr.Init(0);
 
                 WriteableBitmap img = null;
 

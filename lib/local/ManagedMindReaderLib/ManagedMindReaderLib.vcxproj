@@ -39,9 +39,11 @@
     <Import Project="..\..\3rdParty\activemq-cpp_vs2012\activemq-cpp_vs2012.props" />
     <Import Project="..\..\3rdParty\apr_1.4.6_vs2012\apr_1.4.6_vs2012.props" />
     <Import Project="..\..\3rdParty\apr_util_1.5.2_vs2012\apr_util_1.5.2_vs2012.props" />
-    <Import Project="..\..\3rdParty\apr_iconv_1.2.1_vs2012\apr_iconv_1.2.1_vs2012.props" />
     <Import Project="..\..\3rdParty\OpenCV\openCVd_vs2012.props" />
     <Import Project="..\..\3rdParty\boost\boost_vs2012d.props" />
+    <Import Project="..\..\3rdParty\apr_iconv_1.2.1_vs2012\apr_iconv_1.2.1_vs2012.props" />
+    <Import Project="..\..\3rdParty\dlib\dlib.props" />
+    <Import Project="..\..\3rdParty\tbb\tbb_2012.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -51,6 +53,8 @@
     <Import Project="..\..\3rdParty\apr_iconv_1.2.1_vs2012\apr_iconv_1.2.1_vs2012.props" />
     <Import Project="..\..\3rdParty\OpenCV\openCV_vs2012.props" />
     <Import Project="..\..\3rdParty\boost\boost_vs2012.props" />
+    <Import Project="..\..\3rdParty\dlib\dlib.props" />
+    <Import Project="..\..\3rdParty\tbb\tbb_2012.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -122,6 +126,9 @@
     <Image Include="app.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\3rdParty\dlib\dlib.vcxproj">
+      <Project>{b47a5f12-2567-44e9-ae49-35763ec82149}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\CLM\CLM_vs2012.vcxproj">
       <Project>{bdc1d107-de17-4705-8e7b-cdde8bfb2bf8}</Project>
     </ProjectReference>

@@ -83,7 +83,12 @@ struct CLMParameters
 	
 	// Used for the current frame
 	vector<int> window_sizes_current;
+	
+	// How big is the tracking template that helps with large motions TODO
+	double face_template_scale;	
+	bool use_face_template;
 
+	// Where to load the model from
 	string model_location;
 	
 	// this is used for the smooting of response maps (KDE sigma)
@@ -98,7 +103,12 @@ struct CLMParameters
 	// How often should face detection be used to attempt reinitialisation, every n frames (set to negative not to reinit)
 	int reinit_video_every;
 
+	// Determining which face detector to use for (re)initialisation, HAAR is quicker but provides more false positives and is not goot for in-the-wild conditions
+	// Also HAAR detector can detect smaller faces while HOG SVM is only capable of detecting faces at least 70px across
+	enum FaceDetector{HAAR_DETECTOR, HOG_SVM_DETECTOR};
+
 	string face_detector_location;
+	FaceDetector curr_face_detector;
 
 	// Should the results be visualised and reported to console
 	bool quiet_mode;
@@ -204,6 +214,10 @@ struct CLMParameters
 				num_optimisation_iteration = 10;
 
 				valid[i] = false;
+
+				// For in-the-wild images use an in-the wild detector				
+				curr_face_detector = HOG_SVM_DETECTOR;
+
 			}
 			else if (arguments[i].compare("-help") == 0)
 			{
@@ -242,6 +256,10 @@ struct CLMParameters
 			window_sizes_init.at(0) = 11;
 			window_sizes_init.at(1) = 9;
 			window_sizes_init.at(2) = 7;
+			
+			face_template_scale = 0.3;
+			// Off by default (as it might lead to some slight inaccuracies in slowly moving faces)
+			use_face_template = false;
 
 			// For first frame use the initialisation
 			window_sizes_current = window_sizes_init;
@@ -267,6 +285,9 @@ struct CLMParameters
 			#endif
 
 			quiet_mode = false;
+
+			// By default use HOG SVM
+			curr_face_detector = HOG_SVM_DETECTOR;
 		}
 };
 

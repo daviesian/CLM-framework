@@ -151,6 +151,9 @@ void CLM::Read_CLM(string clm_location)
 	// Initialise the patch experts
 	patch_experts.Read(intensity_expert_locations, depth_expert_locations, ccnf_expert_locations);
 
+	// Read in a face detector
+	face_detector_HOG = dlib::get_frontal_face_detector();
+
 }
 
 void CLM::Read(string main_location)
@@ -248,7 +251,7 @@ void CLM::Reset()
 	params_global = Vec6d(1, 0, 0, 0, 0, 0);
 
 	failures_in_a_row = -1;
-
+	face_template = Mat_<uchar>();
 }
 
 // The main internal landmark detection call (should not be used externally?)
