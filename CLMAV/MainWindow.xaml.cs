@@ -69,6 +69,49 @@ namespace CLMAV
                     }
                 }
 
+                bool dim_visible = false;
+
+                for (int i = 0; i < args.Length; i++)
+                {
+                    if ((args[i] == "-width" && args.Length > i + 1))
+                    {
+                        int width = Int32.Parse(args[i + 1]);
+                        Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => Application.Current.MainWindow.Width = width), null);
+                        i++;
+                    }
+                    else if ((args[i] == "-height" && args.Length > i + 1))
+                    {
+                        int height = Int32.Parse(args[i + 1]);
+                        Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => Application.Current.MainWindow.Height = height), null);
+                        i++;
+                    }
+                    else if ((args[i] == "-xpos" && args.Length > i + 1))
+                    {
+                        int xpos = Int32.Parse(args[i + 1]);
+                        Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => Application.Current.MainWindow.Left = xpos), null);
+                        i++;
+                    }
+                    else if ((args[i] == "-ypos" && args.Length > i + 1))
+                    {
+                        int ypos = Int32.Parse(args[i + 1]);
+                        Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => Application.Current.MainWindow.Top = ypos), null);
+                        i++;
+                    }
+                    else if ((args[i] == "-showav"))
+                    {
+                        dim_visible = true;
+                    }
+                }
+
+                // Somewhat hacky but works
+                if (!dim_visible)
+                {
+                    Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => avPlot.Visibility = System.Windows.Visibility.Collapsed), null);
+                    Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => analysisBox.Visibility = System.Windows.Visibility.Collapsed), null);
+                    Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => OverallGrid.ColumnDefinitions.RemoveAt(3)), null);
+                    Application.Current.Dispatcher.BeginInvoke(new ThreadStart(() => OverallGrid.ColumnDefinitions.RemoveAt(3)), null);                    
+                }
+
                 mmr = new MMR(mjpegServerPort);
 
                 // This should be specified by the call? TODO using -camera param
@@ -107,18 +150,21 @@ namespace CLMAV
                     {
                         Dispatcher.Invoke(delegate()
                         {
-                            
-                            if (!mmr.PredictionAvailable)
+
+                            if (dim_visible)
                             {
-                                avPlot.Visibility = System.Windows.Visibility.Hidden;
-                                analysisBox.Visibility = System.Windows.Visibility.Visible;
+                                if (!mmr.PredictionAvailable)
+                                {
+                                    avPlot.Visibility = System.Windows.Visibility.Hidden;
+                                    analysisBox.Visibility = System.Windows.Visibility.Visible;
+                                }
+                                else
+                                {
+                                    avPlot.Visibility = System.Windows.Visibility.Visible;
+                                    analysisBox.Visibility = System.Windows.Visibility.Hidden;
+                                }
                             }
-                            else
-                            {
-                                avPlot.Visibility = System.Windows.Visibility.Visible;
-                                analysisBox.Visibility = System.Windows.Visibility.Hidden;
-                            }
-                            
+
                             if (img == null)
                             {
                                 img = f.CreateWriteableBitmap();

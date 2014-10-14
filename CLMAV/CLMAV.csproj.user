@@ -2,5 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <StartWorkingDirectory>F:\CLM-framework-AV\Release\</StartWorkingDirectory>
+    <StartArguments>-c 0 -xpos 10 -ypos 10 -width 300 -height 400 -showav</StartArguments>
   </PropertyGroup>
 </Project>
