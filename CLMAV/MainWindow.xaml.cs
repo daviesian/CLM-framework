@@ -39,7 +39,7 @@ namespace CLMAV
         }
         #endregion
 
-
+        public static string[] args;
         MMR mmr;
         bool closing = false;
         bool resetTracking = false;
@@ -52,10 +52,27 @@ namespace CLMAV
             new Thread(delegate()
             {
 
-                mmr = new MMR(0);
+                int camera = 0;
+                for (int i = 0; i < args.Length; i++)
+                {
+                    if ((args[i] == "-c" || args[i] == "--camera") && args.Length > i + 1)
+                        camera = int.Parse(args[i + 1]);
+                }
+
+                int mjpegServerPort = 0;
+                for (int i = 0; i < args.Length - 1; i++)
+                {
+                    if ((args[i] == "-m" || args[i] == "--mjpeg") && args.Length > i + 1)
+                    {
+                        mjpegServerPort = Int32.Parse(args[i + 1]);
+                        break;
+                    }
+                }
+
+                mmr = new MMR(mjpegServerPort);
 
                 // This should be specified by the call? TODO using -camera param
-                mmr.Init(0);
+                mmr.Init(camera);
 
                 WriteableBitmap img = null;
 
